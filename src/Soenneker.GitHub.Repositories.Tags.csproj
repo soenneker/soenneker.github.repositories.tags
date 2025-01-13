@@ -38,10 +38,11 @@
         <None Include="..\CONTRIBUTING.md" Link="CONTRIBUTING.md" />
         <None Include="..\README.md" Pack="true" PackagePath="\" />
         <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-        <None Include="..\icon.png" Pack="true" PackagePath="\"/>
+        <None Include="..\icon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.GitHub.Client" Version="3.0.1938" />
+        <PackageReference Include="Soenneker.Extensions.Task" Version="3.0.85" />
+        <PackageReference Include="Soenneker.GitHub.Client" Version="3.0.1939" />
     </ItemGroup>
 </Project>
