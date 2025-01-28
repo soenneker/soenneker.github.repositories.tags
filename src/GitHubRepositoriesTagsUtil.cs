@@ -8,11 +8,12 @@ using System.Threading;
 using System;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
+using Soenneker.Extensions.String;
 
 namespace Soenneker.GitHub.Repositories.Tags;
 
 /// <inheritdoc cref="IGitHubRepositoriesTagsUtil"/>
-public class GitHubRepositoriesTagsUtil: IGitHubRepositoriesTagsUtil
+public class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 {
     private readonly IGitHubClientUtil _gitHubClientUtil;
     private readonly ILogger<GitHubRepositoriesTagsUtil> _logger;
@@ -31,7 +32,7 @@ public class GitHubRepositoriesTagsUtil: IGitHubRepositoriesTagsUtil
 
         foreach (RepositoryTag? tag in tags)
         {
-            if (string.Equals(tag.Name, tagName, StringComparison.OrdinalIgnoreCase))
+            if (tag.Name.EqualsIgnoreCase(tagName))
                 return true;
         }
 
@@ -69,7 +70,7 @@ public class GitHubRepositoriesTagsUtil: IGitHubRepositoriesTagsUtil
 
         foreach (RepositoryTag repoTag in tags)
         {
-            if (string.Equals(repoTag.Name, tagName, StringComparison.OrdinalIgnoreCase))
+            if (repoTag.Name.EqualsIgnoreCase(tagName))
             {
                 // Fetch the tag reference
                 Reference? reference = await client.Git.Reference.Get(owner, repo, $"tags/{tagName}").NoSync();
