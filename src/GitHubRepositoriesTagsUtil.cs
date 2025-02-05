@@ -108,8 +108,7 @@ public class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         GitTag? tag = await client.Git.Tag.Get(owner, repo, reference.Object.Sha).NoSync();
 
         // Get the commit
-        Commit? commit = await client.Git.Commit.Get(owner, repo, tag.Object.Sha).NoSync();
-        return commit;
+        return await client.Git.Commit.Get(owner, repo, tag.Object.Sha).NoSync();
     }
 
     public async ValueTask<CompareResult> Compare(string owner, string repo, string baseTag, string headTag, CancellationToken cancellationToken = default)

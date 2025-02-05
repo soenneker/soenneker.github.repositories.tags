@@ -15,8 +15,8 @@ public static class GitHubRepositoriesTagsUtilRegistrar
     /// </summary>
     public static IServiceCollection AddGitHubRepositoriesTagsUtilAsSingleton(this IServiceCollection services)
     {
-        services.AddGitHubClientUtilAsSingleton();
-        services.TryAddSingleton<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
+        services.AddGitHubClientUtilAsSingleton()
+                .TryAddSingleton<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
 
         return services;
     }
@@ -26,8 +26,8 @@ public static class GitHubRepositoriesTagsUtilRegistrar
     /// </summary>
     public static IServiceCollection AddGitHubRepositoriesTagsUtilAsScoped(this IServiceCollection services)
     {
-        services.AddGitHubClientUtilAsSingleton();
-        services.TryAddScoped<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
+        services.AddGitHubClientUtilAsSingleton()
+                .TryAddScoped<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
 
         return services;
     }
