@@ -1,4 +1,4 @@
-# Contributing to Soenneker.GitHub.Repositories.Tags
+﻿# Contributing to Soenneker.GitHub.Repositories.Tags
 
 We're excited that you're interested in contributing!
 
