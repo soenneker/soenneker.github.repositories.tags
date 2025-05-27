@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Soenneker.GitHub.Client.Registrars;
+using Soenneker.GitHub.ClientUtil.Registrars;
 using Soenneker.GitHub.Repositories.Tags.Abstract;
 
 namespace Soenneker.GitHub.Repositories.Tags.Registrars;
@@ -15,8 +15,7 @@ public static class GitHubRepositoriesTagsUtilRegistrar
     /// </summary>
     public static IServiceCollection AddGitHubRepositoriesTagsUtilAsSingleton(this IServiceCollection services)
     {
-        services.AddGitHubClientUtilAsSingleton()
-                .TryAddSingleton<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
+        services.AddGitHubOpenApiClientUtilAsSingleton().TryAddSingleton<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
 
         return services;
     }
@@ -26,8 +25,7 @@ public static class GitHubRepositoriesTagsUtilRegistrar
     /// </summary>
     public static IServiceCollection AddGitHubRepositoriesTagsUtilAsScoped(this IServiceCollection services)
     {
-        services.AddGitHubClientUtilAsSingleton()
-                .TryAddScoped<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
+        services.AddGitHubOpenApiClientUtilAsSingleton().TryAddScoped<IGitHubRepositoriesTagsUtil, GitHubRepositoriesTagsUtil>();
 
         return services;
     }
