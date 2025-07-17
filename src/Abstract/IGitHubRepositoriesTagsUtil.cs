@@ -77,4 +77,6 @@ public interface IGitHubRepositoriesTagsUtil
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A <see cref="CommitComparison"/> object representing the differences between the two tags.</returns>
     ValueTask<CommitComparison> Compare(string owner, string repo, string baseTag, string headTag, CancellationToken cancellationToken = default);
+
+    ValueTask<string> GetLatestStableTag(string owner, string repo, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Soenneker.Extensions.String;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.GitHub.ClientUtil.Abstract;
@@ -180,5 +181,38 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         GitHubOpenApiClient client = await _gitHubClientUtil.Get(cancellationToken).NoSync();
 
         return await client.Repos[owner][repo].Compare[baseTag + "..." + headTag].GetAsync(cancellationToken: cancellationToken).NoSync();
+    }
+
+    public async ValueTask<string> GetLatestStableTag(string owner, string repo, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Tag> tags = await GetAll(owner, repo, cancellationToken).NoSync();
+
+        Version? best = null;
+        string? bestTag = null;
+
+        foreach (Tag tag in tags)
+        {
+            string name = tag.Name;
+
+            // Skip prerelease tags
+            if (name.ContainsIgnoreCase("-rc") || name.ContainsIgnoreCase("-beta") || name.ContainsIgnoreCase("-alpha"))
+                continue;
+
+            // Strip leading 'v' if present
+            if (name.StartsWithIgnoreCase("v"))
+                name = name[1..];
+
+            // Parse into System.Version (handles 1, 1.2, 1.2.3, 1.2.3.4)
+            if (!Version.TryParse(name, out Version? v))
+                continue; // ignore tags that aren’t simple semver strings
+
+            if (best is null || v > best)
+            {
+                best = v;
+                bestTag = tag.Name; // keep original tag text
+            }
+        }
+
+        return bestTag ?? throw new InvalidOperationException($"No stable tag found in {owner}/{repo}.");
     }
 }
