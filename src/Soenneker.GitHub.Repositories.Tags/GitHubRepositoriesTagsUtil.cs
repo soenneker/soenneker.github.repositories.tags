@@ -5,7 +5,6 @@ using Soenneker.Extensions.ValueTask;
 using Soenneker.GitHub.ClientUtil.Abstract;
 using Soenneker.GitHub.OpenApiClient;
 using Soenneker.GitHub.OpenApiClient.Models;
-using Soenneker.GitHub.OpenApiClient.Repos.Item.Item.Git.Tags;
 using Soenneker.GitHub.Repositories.Tags.Abstract;
 using System;
 using System.Collections.Generic;
@@ -62,21 +61,21 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         string latestCommitSha = branch.Commit.Sha;
 
         // Create a Git tag
-        var tagBody = new TagsPostRequestBody
+        var tagBody = new GitCreateTag
         {
             Tag = tagName,
             Message = $"Tag {tagName}",
             Object = latestCommitSha,
-            Type = TagsPostRequestBody_type.Commit
+            Type = GitCreateTag_type.Commit
         };
 
-        await client.Repos[owner][repo].Git.Tags.PostAsync(tagBody, cancellationToken: cancellationToken).NoSync();
+        GitTag? createdTag = await client.Repos[owner][repo].Git.Tags.PostAsync(tagBody, cancellationToken: cancellationToken).NoSync();
 
         // Create a reference to the tag
-        var refBody = new OpenApiClient.Repos.Item.Item.Git.Refs.RefsPostRequestBody
+        var refBody = new GitCreateRef
         {
             Ref = $"refs/tags/{tagName}",
-            Sha = latestCommitSha
+            Sha = createdTag?.Sha ?? latestCommitSha
         };
 
         await client.Repos[owner][repo].Git.Refs.PostAsync(refBody, cancellationToken: cancellationToken).NoSync();
@@ -204,7 +203,7 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
             // Parse into System.Version (handles 1, 1.2, 1.2.3, 1.2.3.4)
             if (!Version.TryParse(name, out Version? v))
-                continue; // ignore tags that aren’t simple semver strings
+                continue; // ignore tags that arenï¿½t simple semver strings
 
             if (best is null || v > best)
             {
