@@ -1,20 +1,19 @@
 using Soenneker.GitHub.Repositories.Tags.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.GitHub.Repositories.Tags.Tests;
 
-[Collection("Collection")]
-public class GitHubRepositoriesTagsUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class GitHubRepositoriesTagsUtilTests : HostedUnitTest
 {
     private readonly IGitHubRepositoriesTagsUtil _util;
 
-    public GitHubRepositoriesTagsUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public GitHubRepositoriesTagsUtilTests(Host host) : base(host)
     {
         _util = Resolve<IGitHubRepositoriesTagsUtil>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
