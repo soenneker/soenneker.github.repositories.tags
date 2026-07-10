@@ -61,18 +61,18 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         string latestCommitSha = branch.Commit.Sha;
 
         // Create a Git tag
-        var tagBody = new GitCreateTag
+        var tagBody = new GitCreateTagRequest
         {
             Tag = tagName,
             Message = $"Tag {tagName}",
             Object = latestCommitSha,
-            Type = GitCreateTag_type.Commit
+            Type = GitCreateTagRequestType.Commit
         };
 
         GitTag? createdTag = await client.Repos[owner][repo].Git.Tags.PostAsync(tagBody, cancellationToken: cancellationToken).NoSync();
 
         // Create a reference to the tag
-        var refBody = new GitCreateRef
+        var refBody = new GitCreateRefRequest
         {
             Ref = $"refs/tags/{tagName}",
             Sha = createdTag?.Sha ?? latestCommitSha
