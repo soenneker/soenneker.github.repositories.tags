@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 
 namespace Soenneker.GitHub.Repositories.Tags;
 
-///<inheritdoc cref="IGitHubRepositoriesTagsUtil"/>
 public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 {
     private readonly ILogger<GitHubRepositoriesTagsUtil> _logger;
@@ -29,20 +28,13 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
     {
         _logger.LogInformation("Checking if tag {TagName} exists in {Owner}/{Repo}...", tagName, owner, repo);
 
-        GitHubOpenApiClient client = await _gitHubClientUtil.Get(cancellationToken).NoSync();
-
-        List<Tag>? tags = await client.Repos[owner][repo]
-                                      .Tags.GetAsync(requestConfiguration => { requestConfiguration.QueryParameters.PerPage = 100; }, cancellationToken)
-                                      .NoSync();
-
-        if (tags == null)
-            return false;
+        IReadOnlyList<Tag> tags = await GetAll(owner, repo, cancellationToken).NoSync();
 
         for (var i = 0; i < tags.Count; i++)
         {
             Tag tag = tags[i];
 
-            if (string.Equals(tag.Name, tagName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(tag.Name, tagName, StringComparison.Ordinal))
                 return true;
         }
 
@@ -55,10 +47,17 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
         GitHubOpenApiClient client = await _gitHubClientUtil.Get(cancellationToken);
 
-        // Get the latest commit SHA (HEAD)
         FullRepository? repoInfo = await client.Repos[owner][repo].GetAsync(cancellationToken: cancellationToken).NoSync();
-        BranchWithProtection? branch = await client.Repos[owner][repo].Branches[repoInfo.DefaultBranch].GetAsync(cancellationToken: cancellationToken).NoSync();
-        string latestCommitSha = branch.Commit.Sha;
+
+        if (repoInfo?.DefaultBranch == null)
+            throw new InvalidOperationException("GitHub did not return the repository's default branch.");
+
+        BranchWithProtection? branch =
+            await client.Repos[owner][repo].Branches[repoInfo.DefaultBranch].GetAsync(cancellationToken: cancellationToken).NoSync();
+        string? latestCommitSha = branch?.Commit?.Sha;
+
+        if (latestCommitSha == null)
+            throw new InvalidOperationException("GitHub did not return the default branch's latest commit SHA.");
 
         // Create a Git tag
         var tagBody = new GitCreateTagRequest
@@ -71,11 +70,14 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
         GitTag? createdTag = await client.Repos[owner][repo].Git.Tags.PostAsync(tagBody, cancellationToken: cancellationToken).NoSync();
 
+        if (createdTag?.Sha == null)
+            throw new InvalidOperationException("GitHub did not return the created annotated tag's SHA.");
+
         // Create a reference to the tag
         var refBody = new GitCreateRefRequest
         {
             Ref = $"refs/tags/{tagName}",
-            Sha = createdTag?.Sha ?? latestCommitSha
+            Sha = createdTag.Sha
         };
 
         await client.Repos[owner][repo].Git.Refs.PostAsync(refBody, cancellationToken: cancellationToken).NoSync();
@@ -129,16 +131,21 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         {
             Tag tag = tags[i];
 
-            if (string.Equals(tag.Name, tagName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(tag.Name, tagName, StringComparison.Ordinal))
             {
                 // Get the tag reference (use .Git.Ref not .Git.Refs)
                 GitRef? reference = await client.Repos[owner][repo].Git.Ref["tags/" + tagName].GetAsync(cancellationToken: cancellationToken).NoSync();
-                GitTag? gitTag = await client.Repos[owner][repo].Git.Tags[reference.Object?.Sha].GetAsync(cancellationToken: cancellationToken).NoSync();
-                return gitTag;
+                string? tagSha = reference?.Object?.Sha;
+
+                if (tagSha == null)
+                    throw new InvalidOperationException($"GitHub did not return the object SHA for tag '{tagName}'.");
+
+                GitTag? gitTag = await client.Repos[owner][repo].Git.Tags[tagSha].GetAsync(cancellationToken: cancellationToken).NoSync();
+                return gitTag ?? throw new InvalidOperationException($"GitHub did not return details for annotated tag '{tagName}'.");
             }
         }
 
-        throw new ArgumentException($"Tag '{tagName}' does not exist in repository '{owner}/{repo}'.");
+        throw new InvalidOperationException($"Tag '{tagName}' does not exist in repository '{owner}/{repo}'.");
     }
 
     public async ValueTask Delete(string owner, string repo, string tagName, CancellationToken cancellationToken = default)
@@ -149,7 +156,7 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
         bool exists = await DoesTagExist(owner, repo, tagName, cancellationToken).NoSync();
 
         if (!exists)
-            throw new ArgumentException($"Tag '{tagName}' does not exist in repository '{owner}/{repo}'.");
+            throw new InvalidOperationException($"Tag '{tagName}' does not exist in repository '{owner}/{repo}'.");
 
         GitHubOpenApiClient client = await _gitHubClientUtil.Get(cancellationToken).NoSync();
 
@@ -165,12 +172,19 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
         // Get the tag reference (use .Git.Ref not .Git.Refs)
         GitRef? reference = await client.Repos[owner][repo].Git.Ref["tags/" + tagName].GetAsync(cancellationToken: cancellationToken).NoSync();
+        string? tagSha = reference?.Object?.Sha;
 
-        // Get the tag object
-        GitTag? tag = await client.Repos[owner][repo].Git.Tags[reference.Object?.Sha].GetAsync(cancellationToken: cancellationToken).NoSync();
+        if (tagSha == null)
+            throw new InvalidOperationException($"GitHub did not return the object SHA for tag '{tagName}'.");
 
-        // Get the commit
-        return await client.Repos[owner][repo].Git.Commits[tag.Object.Sha].GetAsync(cancellationToken: cancellationToken).NoSync();
+        GitTag? tag = await client.Repos[owner][repo].Git.Tags[tagSha].GetAsync(cancellationToken: cancellationToken).NoSync();
+        string? commitSha = tag?.Object?.Sha;
+
+        if (commitSha == null)
+            throw new InvalidOperationException($"GitHub did not return the commit SHA for annotated tag '{tagName}'.");
+
+        GitCommit? commit = await client.Repos[owner][repo].Git.Commits[commitSha].GetAsync(cancellationToken: cancellationToken).NoSync();
+        return commit ?? throw new InvalidOperationException($"GitHub did not return the commit for annotated tag '{tagName}'.");
     }
 
     public async ValueTask<CommitComparison> Compare(string owner, string repo, string baseTag, string headTag, CancellationToken cancellationToken = default)
@@ -179,7 +193,10 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
         GitHubOpenApiClient client = await _gitHubClientUtil.Get(cancellationToken).NoSync();
 
-        return await client.Repos[owner][repo].Compare[baseTag + "..." + headTag].GetAsync(cancellationToken: cancellationToken).NoSync();
+        CommitComparison? comparison =
+            await client.Repos[owner][repo].Compare[baseTag + "..." + headTag].GetAsync(cancellationToken: cancellationToken).NoSync();
+
+        return comparison ?? throw new InvalidOperationException($"GitHub did not return a comparison for '{baseTag}...{headTag}'.");
     }
 
     public async ValueTask<string> GetLatestStableTag(string owner, string repo, CancellationToken cancellationToken = default)
@@ -191,7 +208,10 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 
         foreach (Tag tag in tags)
         {
-            string name = tag.Name;
+            string? name = tag.Name;
+
+            if (name == null)
+                continue;
 
             // Skip prerelease tags
             if (name.ContainsIgnoreCase("-rc") || name.ContainsIgnoreCase("-beta") || name.ContainsIgnoreCase("-alpha"))

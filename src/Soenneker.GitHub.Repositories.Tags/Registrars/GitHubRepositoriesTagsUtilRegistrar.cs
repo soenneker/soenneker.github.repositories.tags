@@ -6,7 +6,7 @@ using Soenneker.GitHub.Repositories.Tags.Abstract;
 namespace Soenneker.GitHub.Repositories.Tags.Registrars;
 
 /// <summary>
-/// A utility library for GitHub repository tag operations
+/// Registers services for creating, inspecting, comparing, and deleting GitHub repository tags.
 /// </summary>
 public static class GitHubRepositoriesTagsUtilRegistrar
 {

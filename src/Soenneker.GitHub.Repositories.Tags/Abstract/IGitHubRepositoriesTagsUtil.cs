@@ -6,12 +6,12 @@ using Soenneker.GitHub.OpenApiClient.Models;
 namespace Soenneker.GitHub.Repositories.Tags.Abstract;
 
 /// <summary>
-/// Provides utilities for managing GitHub repository tags, including creation, deletion, lookup, and comparisons.
+/// Creates, lists, inspects, compares, and deletes GitHub repository tags.
 /// </summary>
 public interface IGitHubRepositoriesTagsUtil
 {
     /// <summary>
-    /// Checks whether a specific tag exists in a given repository.
+    /// Checks whether a case-sensitive tag name exists in a given repository.
     /// </summary>
     /// <param name="owner">The owner of the repository.</param>
     /// <param name="repo">The name of the repository.</param>
@@ -39,7 +39,7 @@ public interface IGitHubRepositoriesTagsUtil
     ValueTask<IReadOnlyList<Tag>> GetAll(string owner, string repo, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets detailed information about a specific tag.
+    /// Gets detailed information about a specific annotated tag.
     /// </summary>
     /// <param name="owner">The owner of the repository.</param>
     /// <param name="repo">The name of the repository.</param>
