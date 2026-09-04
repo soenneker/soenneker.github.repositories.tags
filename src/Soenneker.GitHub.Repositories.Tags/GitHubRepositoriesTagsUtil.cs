@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace Soenneker.GitHub.Repositories.Tags;
 
+/// <inheritdoc cref="IGitHubRepositoriesTagsUtil" />
 public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
 {
     private readonly ILogger<GitHubRepositoriesTagsUtil> _logger;
