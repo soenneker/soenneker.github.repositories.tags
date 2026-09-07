@@ -103,7 +103,7 @@ public sealed class GitHubRepositoriesTagsUtil : IGitHubRepositoriesTagsUtil
                                           }, cancellationToken)
                                           .NoSync();
 
-            if (tags?.Count == 0)
+            if (tags is null || tags.Count == 0)
                 break;
 
             if (tags != null)
